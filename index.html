@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Totally Serious Poll</title>
+  <style>
+    :root { --bg:#0b1620; --card:#12263a; --text:#e8f1ff; --accent:#63d297; --warn:#ff6b6b; }
+    html,body { height:100%; margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--text); background:linear-gradient(180deg, #07101a, #0b1620);}  
+    .wrap { display:flex; align-items:center; justify-content:center; height:100%; padding:24px; }
+    .card {
+      position:relative; width:min(780px, 92vw); padding:28px; border-radius:16px;
+      background:linear-gradient(180deg, var(--card), #0f1f33); box-shadow:0 12px 40px rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    h1 { margin:0 0 12px; font-weight:700; font-size:clamp(20px, 2.6vw, 28px); }
+    p { margin:0 0 22px; opacity:.85; }
+    .stage { position:relative; height:360px; border-radius:12px; background:rgba(255,255,255,.04); overflow:hidden; }
+    .btn {
+      position:absolute; padding:14px 22px; border-radius:12px; border:none; font-weight:700; cursor:pointer;
+      box-shadow:0 6px 20px rgba(0,0,0,.25); transition:transform .06s ease, background .2s ease;
+      user-select:none; -webkit-user-select:none;
+    }
+    #yesBtn { background:linear-gradient(180deg, #42d392, #2fb87f); color:#062315; left:18px; bottom:18px; }
+    #yesBtn:hover { transform:translateY(-1px) scale(1.02); }
+    #noBtn  { background:linear-gradient(180deg, #ff7b7b, #ff5151); color:#2b0000; left:220px; top:120px; }
+    .foot { margin-top:14px; opacity:.7; font-size:12px; }
+    .toast {
+      position:absolute; right:16px; top:16px; background:rgba(30, 60, 90, .9); border:1px solid rgba(255,255,255,.12);
+      padding:10px 14px; border-radius:10px; font-size:14px; display:none;
+    }
+    @media (max-width:560px){
+      .stage { height:300px; }
+      .btn { padding:12px 16px; font-size:14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Quick poll: Do you agree?</h1>
+      <p>We value your input. Please cast your vote below. (Totally impartial. Absolutely no shenanigans.)</p>
+
+      <div class="stage" id="stage">
+        <button id="yesBtn" class="btn">Yes ✅</button>
+        <button id="noBtn"  class="btn">No ❌</button>
+        <div id="toast" class="toast">Thanks for voting YES! 🎉</div>
+      </div>
+
+      <div class="foot">Tip: Try clicking “No” 😉 • Accessibility: If you can't use a mouse, press <kbd>Y</kbd> to vote Yes. For “No”, reply in the Teams thread.</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const stage  = document.getElementById('stage');
+      const yesBtn = document.getElementById('yesBtn');
+      const noBtn  = document.getElementById('noBtn');
+      const toast  = document.getElementById('toast');
+
+      function clamp(val, min, max){ return Math.max(min, Math.min(max, val)); }
+
+      function moveNoAway(mx, my){
+        const s = stage.getBoundingClientRect();
+        const b = noBtn.getBoundingClientRect();
+
+        const cx = b.left + b.width/2;
+        const cy = b.top  + b.height/2;
+        const dx = mx - cx;
+        const dy = my - cy;
+        const dist = Math.hypot(dx, dy);
+
+        const fleeRadius = 140; // px
+        if(dist < fleeRadius){
+          const pad = 8;
+          const maxX = s.width  - b.width  - pad;
+          const maxY = s.height - b.height - pad;
+
+          let nx = Math.random() * maxX + pad;
+          let ny = Math.random() * maxY + pad;
+
+          const tries = 10;
+          for(let i=0;i<tries;i++){
+            const bx = s.left + nx + b.width/2;
+            const by = s.top  + ny + b.height/2;
+            if(Math.hypot(mx - bx, my - by) > fleeRadius * 0.9) break;
+            nx = Math.random() * maxX + pad;
+            ny = Math.random() * maxY + pad;
+          }
+
+          noBtn.style.left = `${clamp(nx, pad, maxX)}px`;
+          noBtn.style.top  = `${clamp(ny, pad, maxY)}px`;
+        }
+      }
+
+      stage.addEventListener('mousemove', (e) => moveNoAway(e.clientX, e.clientY));
+      noBtn.addEventListener('mouseenter', (e) => moveNoAway(e.clientX, e.clientY));
+
+      yesBtn.addEventListener('click', () => {
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 1800);
+        // Optional: send to your endpoint to record the vote
+        // fetch('/api/vote', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ choice:'Yes', at: new Date().toISOString() }) });
+      });
+
+      // Keyboard shortcuts (basic)
+      window.addEventListener('keydown', (e) => {
+        if(e.key.toLowerCase() === 'y') yesBtn.click();
+      });
+
+      yesBtn.tabIndex = 0;
+      noBtn.tabIndex  = 0;
+      yesBtn.focus();
+    })();
+  </script>
+</body>
+</html>
