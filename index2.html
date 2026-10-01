@@ -1,1 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pickleball Poll</title>
+  <style>
+    :root { --bg:#0b1620; --card:#12263a; --text:#e8f1ff; --accent:#63d297; --warn:#ff6b6b; }
+    html,body { height:100%; margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--text); background:linear-gradient(180deg, #07101a, #0b1620);}  
+    .wrap { display:flex; align-items:center; justify-content:center; height:100%; padding:16px; }
+    .card {
+      position:relative; width:min(520px, 94vw); padding:20px; border-radius:14px;
+      background:linear-gradient(180deg, var(--card), #0f1f33); box-shadow:0 10px 30px rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    h1 { margin:0 0 8px; font-weight:700; font-size:clamp(18px, 2.2vw, 22px); }
+    p { margin:0 0 14px; opacity:.85; font-size:14px; }
+    .stage { position:relative; height:220px; border-radius:10px; background:rgba(255,255,255,.04); overflow:hidden; display:flex; align-items:center; justify-content:center; gap:16px; }
+    .btn {
+      position:absolute; padding:10px 16px; border-radius:12px; border:none; font-weight:700; cursor:pointer;
+      box-shadow:0 6px 20px rgba(0,0,0,.25); transition:transform .06s ease, background .2s ease;
+      user-select:none; -webkit-user-select:none; font-size:14px;
+    }
+    /* We'll center both buttons initially */
+    #yesBtn { background:linear-gradient(180deg, #42d392, #2fb87f); color:#062315; }
+    #yesBtn:hover { transform:translateY(-1px) scale(1.02); }
+    #noBtn  { background:linear-gradient(180deg, #ff7b7b, #ff5151); color:#2b0000; }
 
+    .toast {
+      position:absolute; right:12px; top:12px; background:rgba(30, 60, 90, .9); border:1px solid rgba(255,255,255,.12);
+      padding:8px 12px; border-radius:10px; font-size:13px; display:none;
+    }
+    .foot { margin-top:10px; opacity:.7; font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Quick poll</h1>
+      <p>Want to play <strong>pickleball</strong> right now?</p>
+
+      <div class="stage" id="stage">
+        <button id="yesBtn" class="btn">Yes ✅</button>
+        <button id="noBtn"  class="btn">No ❌</button>
+        <div id="toast" class="toast">Awesome — see you on the court! 🏓🎉</div>
+      </div>
+
+      <div class="foot">Tip: Try clicking “No” 😉 • Accessibility: Press <kbd>Y</kbd> for Yes. For “No”, reply in the Teams thread.</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const stage  = document.getElementById('stage');
+      const yesBtn = document.getElementById('yesBtn');
+      const noBtn  = document.getElementById('noBtn');
+      const toast  = document.getElementById('toast');
+
+      // Place buttons side-by-side centered initially
+      function placeButtonsInitially(){
+        const s = stage.getBoundingClientRect();
+        const spacing = 16; // gap between buttons
+        const btnW = 110, btnH = 40; // approximate for initial placement
+        const totalW = btnW*2 + spacing;
+        const startX = (s.width - totalW)/2;
+        const centerY = (s.height - btnH)/2;
+        yesBtn.style.left = `${startX}px`;
+        yesBtn.style.top  = `${centerY}px`;
+        noBtn.style.left  = `${startX + btnW + spacing}px`;
+        noBtn.style.top   = `${centerY}px`;
+      }
+
+      // Keep No within bounds and make it flee
+      function clamp(val, min, max){ return Math.max(min, Math.min(max, val)); }
+
+      function moveNoAway(mx, my){
+        const s = stage.getBoundingClientRect();
+        const b = noBtn.getBoundingClientRect();
+
+        const cx = b.left + b.width/2;
+        const cy = b.top  + b.height/2;
+        const dx = mx - cx;
+        const dy = my - cy;
+        const dist = Math.hypot(dx, dy);
+
+        const fleeRadius = 110; // a little smaller since the stage is smaller
+        if(dist < fleeRadius){
+          const pad = 6;
+          const maxX = s.width  - b.width  - pad;
+          const maxY = s.height - b.height - pad;
+
+          let nx = Math.random() * maxX + pad;
+          let ny = Math.random() * maxY + pad;
+
+          // try to avoid jumping right back under the cursor
+          const tries = 10;
+          for(let i=0;i<tries;i++){
+            const bx = s.left + nx + b.width/2;
+            const by = s.top  + ny + b.height/2;
+            if(Math.hypot(mx - bx, my - by) > fleeRadius * 0.9) break;
+            nx = Math.random() * maxX + pad;
+            ny = Math.random() * maxY + pad;
+          }
+
+          noBtn.style.left = `${clamp(nx, pad, maxX)}px`;
+          noBtn.style.top  = `${clamp(ny, pad, maxY)}px`;
+        }
+      }
+
+      // Init placement after layout
+      window.addEventListener('load', placeButtonsInitially);
+      window.addEventListener('resize', placeButtonsInitially);
+
+      stage.addEventListener('mousemove', (e) => moveNoAway(e.clientX, e.clientY));
+      noBtn.addEventListener('mouseenter', (e) => moveNoAway(e.clientX, e.clientY));
+
+      yesBtn.addEventListener('click', () => {
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 1800);
+      });
+
+      // Keyboard shortcut for Yes
+      window.addEventListener('keydown', (e) => {
+        if(e.key.toLowerCase() === 'y') yesBtn.click();
+      });
+
+      yesBtn.tabIndex = 0;
+      noBtn.tabIndex  = 0;
+    })();
+  </script>
+</body>
+</html>
